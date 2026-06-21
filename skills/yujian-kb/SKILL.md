@@ -1,11 +1,13 @@
 ---
 name: yujian-kb
-description: Use when the user asks for Yujian company knowledge, store SOP, internal business rules, approved Wiki knowledge, or wants Codex to answer from the Yujian enterprise knowledge base. Uses the bundled yujian-kb light client and answers only from its response.
+description: Use when the user asks for 隅间 company knowledge, store SOP, internal business rules, approved Wiki knowledge, or wants Codex to answer from the 隅间 enterprise knowledge base. Uses the bundled yujian-kb light client and answers only from its response.
 ---
 
 # yujian-kb
 
-Use this Skill to access approved Yujian enterprise knowledge through the remote Knowledge QA Service at `https://yujian-kb.xaidev.tech`.
+Use this Skill to access approved 隅间 enterprise knowledge through the remote Knowledge QA Service at `https://yujian-kb.xaidev.tech`.
+
+Canonical naming: the Chinese brand name is `隅间`. `yujian-kb` and `YUJIAN_KB` are command/package/environment slugs only. In Chinese user-facing text, write `隅间`; do not infer, translate, or substitute another Chinese name from the pinyin slug.
 
 Business users install this Skill, not a separate npm CLI. The bundled script is the light Knowledge Access Client:
 
@@ -23,6 +25,7 @@ The script stores only a server URL and Knowledge Access Token, calls `/auth/sta
 
 ## Core Rules
 
+- Use `隅间` as the Chinese brand name in user-facing Chinese responses.
 - Use `ask` only. Do not use `search`, MCP, local indexes, local embeddings, or gbrain directly.
 - Use `https://yujian-kb.xaidev.tech` as the default server. Do not use `127.0.0.1:8000` or `5173`.
 - Use the bundled script; do not require the user to install `@lefit/yujian-kb-cli`.

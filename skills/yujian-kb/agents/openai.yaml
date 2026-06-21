@@ -1,4 +1,4 @@
 interface:
-  display_name: "Yujian KB"
-  short_description: "Ask approved Yujian knowledge from Codex"
-  default_prompt: "Use $yujian-kb to answer this Yujian company knowledge question from approved knowledge."
+  display_name: "隅间 KB"
+  short_description: "Ask approved 隅间 knowledge from Codex"
+  default_prompt: "Use $yujian-kb to answer this 隅间 company knowledge question from approved knowledge."
