@@ -10,13 +10,13 @@ Use this Skill to access approved Yujian enterprise knowledge through the remote
 Business users install this Skill, not a separate npm CLI. The bundled script is the light Knowledge Access Client:
 
 ```bash
-${CODEX_HOME:-$HOME/.codex}/skills/yujian-kb/scripts/yujian-kb
+bash "${CODEX_HOME:-$HOME/.codex}/skills/yujian-kb/scripts/yujian-kb"
 ```
 
 Inside this repository, use:
 
 ```bash
-skills/yujian-kb/scripts/yujian-kb
+bash skills/yujian-kb/scripts/yujian-kb
 ```
 
 The script stores only a server URL and Knowledge Access Token, calls `/auth/status` and `/ask`, and prints the service response. It does not store knowledge locally, run gbrain, build indexes, or generate business answers.
@@ -50,19 +50,19 @@ YUJIAN_KB="skills/yujian-kb/scripts/yujian-kb"
 2. Check authentication:
 
 ```bash
-"$YUJIAN_KB" auth status --verify
+bash "$YUJIAN_KB" auth status --verify
 ```
 
 3. If authentication is missing or invalid, ask the user for the Knowledge Access Token issued by an administrator. Use it only once:
 
 ```bash
-"$YUJIAN_KB" auth login --token <token>
+bash "$YUJIAN_KB" auth login --token <token>
 ```
 
 The default server is `https://yujian-kb.xaidev.tech`. Only override it when the user explicitly gives another server:
 
 ```bash
-"$YUJIAN_KB" auth login --server <server-url> --token <token>
+bash "$YUJIAN_KB" auth login --server <server-url> --token <token>
 ```
 
 After initialization, do not mention or display the token.
@@ -70,7 +70,7 @@ After initialization, do not mention or display the token.
 4. Ask the question:
 
 ```bash
-"$YUJIAN_KB" ask "<question>"
+bash "$YUJIAN_KB" ask "<question>"
 ```
 
 5. Answer the user from the script response. Keep structured sections intact when the response is structured. Preserve any no-answer result instead of filling gaps from general model knowledge.

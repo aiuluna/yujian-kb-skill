@@ -26,8 +26,8 @@ cp -R skills/yujian-kb "${CODEX_HOME:-$HOME/.codex}/skills/yujian-kb"
 向管理员获取低权限 Knowledge Access Token。这个 token 只用于已发布知识问答，不是 yujian-knowledge-hub 后台 token，也不是管理员 token。
 
 ```bash
-"${CODEX_HOME:-$HOME/.codex}/skills/yujian-kb/scripts/yujian-kb" auth login --token ykh_xxx
-"${CODEX_HOME:-$HOME/.codex}/skills/yujian-kb/scripts/yujian-kb" auth status --verify
+bash "${CODEX_HOME:-$HOME/.codex}/skills/yujian-kb/scripts/yujian-kb" auth login --token ykh_xxx
+bash "${CODEX_HOME:-$HOME/.codex}/skills/yujian-kb/scripts/yujian-kb" auth status --verify
 ```
 
 默认服务端是：
@@ -43,7 +43,7 @@ https://yujian-kb.xaidev.tech
 在 Codex 中使用 `$yujian-kb`，或者直接询问企业知识问题。Codex 会按 Skill 说明调用：
 
 ```bash
-"${CODEX_HOME:-$HOME/.codex}/skills/yujian-kb/scripts/yujian-kb" ask "孕妇顾客怎么处理"
+bash "${CODEX_HOME:-$HOME/.codex}/skills/yujian-kb/scripts/yujian-kb" ask "孕妇顾客怎么处理"
 ```
 
 Skill 内置脚本只负责调用远程 Knowledge QA Service 并展示服务端 response。它不负责本地总结、改写或补充业务规则。服务端如果返回结构化答案，Codex 应保留结构；服务端如果返回无可信答案，Codex 应保留 no-answer 结果。
