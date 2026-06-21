@@ -2,6 +2,8 @@
 
 `yujian-kb` 是隅间企业知识库给 Codex / 业务 Agent 使用的 Knowledge Skill。安装后，Codex 可以通过 Skill 内置轻客户端查询已发布企业知识。
 
+Skill 入口文件是 `skills/yujian-kb/SKILL.md`。
+
 ## 安装
 
 在 Codex 中请求安装这个 GitHub Skill：
