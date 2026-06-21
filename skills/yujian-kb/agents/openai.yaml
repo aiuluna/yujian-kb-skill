@@ -1,0 +1,4 @@
+interface:
+  display_name: "Yujian KB"
+  short_description: "Ask approved Yujian knowledge from Codex"
+  default_prompt: "Use $yujian-kb to answer this Yujian company knowledge question from approved knowledge."

@@ -1,0 +1,237 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DEFAULT_SERVER="https://yujian-kb.xaidev.tech"
+
+config_path() {
+  local home="${HOME:-}"
+  if [[ -z "$home" ]]; then
+    home="$(cd ~ && pwd)"
+  fi
+  printf '%s/.config/yujian-kb/config.json' "$home"
+}
+
+usage() {
+  cat >&2 <<'EOF'
+Usage:
+  yujian-kb auth login --token <token> [--server <url>]
+  yujian-kb auth status [--verify]
+  yujian-kb auth logout
+  yujian-kb ask "<question>"
+
+This is the yujian-kb Skill bundled light client.
+EOF
+}
+
+json_escape() {
+  python3 -c 'import json,sys; print(json.dumps(sys.argv[1], ensure_ascii=False))' "$1"
+}
+
+json_field() {
+  python3 -c 'import json,sys; print(json.load(sys.stdin).get(sys.argv[1], ""))' "$1"
+}
+
+read_option() {
+  local name="$1"
+  shift
+  while [[ $# -gt 0 ]]; do
+    if [[ "$1" == "$name" && $# -gt 1 ]]; then
+      printf '%s' "$2"
+      return 0
+    fi
+    shift
+  done
+  return 1
+}
+
+save_config() {
+  local server="$1"
+  local token="$2"
+  local path
+  path="$(config_path)"
+  mkdir -p "$(dirname "$path")"
+  umask 077
+  printf '{"server":%s,"token":%s}\n' "$(json_escape "$server")" "$(json_escape "$token")" > "${path}.tmp"
+  mv "${path}.tmp" "$path"
+}
+
+load_field() {
+  local field="$1"
+  local path
+  path="$(config_path)"
+  if [[ ! -f "$path" ]]; then
+    return 1
+  fi
+  json_field "$field" < "$path"
+}
+
+request() {
+  local method="$1"
+  local url="$2"
+  local token="$3"
+  local body="${4:-}"
+  local response
+  local status
+  local payload
+
+  if [[ -n "$body" ]]; then
+    response="$(curl -sS -w '\n%{http_code}' -X "$method" "$url" \
+      -H "Authorization: Bearer ${token}" \
+      -H "Content-Type: application/json" \
+      --data "$body")"
+  else
+    response="$(curl -sS -w '\n%{http_code}' -X "$method" "$url" \
+      -H "Authorization: Bearer ${token}")"
+  fi
+
+  status="${response##*$'\n'}"
+  payload="${response%$'\n'*}"
+  printf '%s\n%s\n' "$status" "$payload"
+}
+
+status_command() {
+  local verify="${1:-}"
+  local server
+  local token
+
+  if ! server="$(load_field server)" || [[ -z "$server" ]]; then
+    echo "Connection Config not found. Run \`yujian-kb auth login --token <token>\`." >&2
+    return 1
+  fi
+
+  if ! token="$(load_field token)" || [[ -z "$token" ]]; then
+    echo "Connection Config is incomplete. Run \`yujian-kb auth login --token <token>\`." >&2
+    return 1
+  fi
+
+  if [[ "$verify" == "--verify" ]]; then
+    local result
+    local code
+    result="$(request GET "${server%/}/auth/status" "$token")" || {
+      echo "Could not reach Knowledge QA Service. Check the server URL or network connection." >&2
+      return 1
+    }
+    code="$(printf '%s\n' "$result" | sed -n '1p')"
+    if [[ "$code" != 2* ]]; then
+      echo "Authentication failed. Reinitialize the token or contact an administrator." >&2
+      return 1
+    fi
+    echo "Authenticated with ${server}."
+    return 0
+  fi
+
+  echo "Connection Config found for ${server}."
+}
+
+login_command() {
+  local token
+  local server
+  token="$(read_option --token "$@" || true)"
+  server="$(read_option --server "$@" || true)"
+  server="${server:-$DEFAULT_SERVER}"
+
+  if [[ -z "$token" ]]; then
+    echo "Usage: yujian-kb auth login --token <token> [--server <url>]" >&2
+    return 1
+  fi
+
+  save_config "$server" "$token"
+  echo "Connection Config saved."
+}
+
+logout_command() {
+  rm -f "$(config_path)"
+  echo "Connection Config removed."
+}
+
+ask_command() {
+  local question="$*"
+  local server
+  local token
+  local body
+  local result
+  local code
+  local payload
+
+  if [[ -z "${question// }" ]]; then
+    echo "Usage: yujian-kb ask <question>" >&2
+    return 1
+  fi
+
+  if ! server="$(load_field server)" || [[ -z "$server" ]]; then
+    echo "Connection Config not found. Run \`yujian-kb auth login --token <token>\`." >&2
+    return 1
+  fi
+
+  if ! token="$(load_field token)" || [[ -z "$token" ]]; then
+    echo "Connection Config is incomplete. Run \`yujian-kb auth login --token <token>\`." >&2
+    return 1
+  fi
+
+  body="$(printf '{"question":%s}' "$(json_escape "$question")")"
+  result="$(request POST "${server%/}/ask" "$token" "$body")" || {
+    echo "Could not reach Knowledge QA Service. Check the server URL or network connection." >&2
+    return 1
+  }
+  code="$(printf '%s\n' "$result" | sed -n '1p')"
+  payload="$(printf '%s\n' "$result" | sed '1d')"
+
+  if [[ "$code" != 2* ]]; then
+    echo "Knowledge QA Service rejected the request. Reinitialize the token or contact an administrator." >&2
+    return 1
+  fi
+
+  python3 -c '
+import json, sys
+text = sys.stdin.read()
+body = json.loads(text) if text.strip() else {}
+if isinstance(body, str):
+    print(body)
+elif isinstance(body, dict) and isinstance(body.get("answer"), str):
+    print(body["answer"])
+elif isinstance(body, dict) and isinstance(body.get("message"), str):
+    print(body["message"])
+else:
+    print(json.dumps(body, ensure_ascii=False))
+' <<< "$payload"
+}
+
+if [[ $# -eq 0 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+case "${1:-}" in
+  auth)
+    shift
+    case "${1:-}" in
+      login)
+        shift
+        login_command "$@"
+        ;;
+      status)
+        shift
+        status_command "${1:-}"
+        ;;
+      logout)
+        logout_command
+        ;;
+      *)
+        usage
+        exit 1
+        ;;
+    esac
+    ;;
+  ask)
+    shift
+    ask_command "$@"
+    ;;
+  search|mcp)
+    echo "This capability is not supported in v0. Run \`yujian-kb ask <question>\`." >&2
+    exit 1
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac
