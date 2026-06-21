@@ -27,6 +27,8 @@ The script stores only a server URL and Knowledge Access Token, calls `/auth/sta
 
 - Use `隅间` as the Chinese brand name in user-facing Chinese responses.
 - Use `ask` only. Do not use `search`, MCP, local indexes, local embeddings, or gbrain directly.
+- Do not run `auth status --verify` before normal questions. The fast path is one `ask` call.
+- Do not narrate preflight checks for normal questions; call the bundled client first and respond from its output.
 - Use `https://yujian-kb.xaidev.tech` as the default server. Do not use `127.0.0.1:8000` or `5173`.
 - Use the bundled script; do not require the user to install `@lefit/yujian-kb-cli`.
 - Do not call service APIs by hand. The bundled script is the only access path this Skill should use.
@@ -50,16 +52,17 @@ If working inside this repository, use:
 YUJIAN_KB="skills/yujian-kb/scripts/yujian-kb"
 ```
 
-2. Check authentication:
+2. Ask directly:
 
 ```bash
-bash "$YUJIAN_KB" auth status --verify
+bash "$YUJIAN_KB" ask "<question>"
 ```
 
-3. If authentication is missing or invalid, ask the user for the Knowledge Access Token issued by an administrator. Use it only once:
+3. If the client reports that Connection Config is missing or incomplete, ask the user for the Knowledge Access Token issued by an administrator. Use it only once, then retry the same question:
 
 ```bash
 bash "$YUJIAN_KB" auth login --token <token>
+bash "$YUJIAN_KB" ask "<question>"
 ```
 
 The default server is `https://yujian-kb.xaidev.tech`. Only override it when the user explicitly gives another server:
@@ -70,10 +73,10 @@ bash "$YUJIAN_KB" auth login --server <server-url> --token <token>
 
 After initialization, do not mention or display the token.
 
-4. Ask the question:
+4. If the request is rejected after a token is configured, tell the user the token may be invalid, expired, or unauthorized and that they should contact an administrator. Use `auth status --verify` only when the user explicitly asks to check authentication or when troubleshooting a credential problem:
 
 ```bash
-bash "$YUJIAN_KB" ask "<question>"
+bash "$YUJIAN_KB" auth status --verify
 ```
 
 5. Answer the user from the script response. Keep structured sections intact when the response is structured. Preserve any no-answer result instead of filling gaps from general model knowledge.
